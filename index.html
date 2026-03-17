@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekend War | Golf Scoring</title>
+    <style>
+        :root {
+            --green-team: #059669;
+            --white-team: #ffffff;
+            --red-team: #e11d48;
+            --blue-team: #2563eb;
+            --bg-main: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-light: #64748b;
+            --radius: 1.25rem;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            background-color: var(--bg-main); 
+            color: var(--text-dark); 
+            margin: 0; padding: 0; 
+            line-height: 1.5;
+            padding-bottom: 100px;
+        }
+
+        /* Header */
+        header {
+            background: #fff;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 2px solid #f1f5f9;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .logo-container { display: flex; align-items: center; gap: 0.75rem; }
+        .logo-box { background: #0f172a; padding: 0.5rem; border-radius: 0.75rem; color: #fbbf24; }
+        .logo-text h1 { margin: 0; font-size: 1.25rem; font-weight: 900; text-transform: uppercase; italic; letter-spacing: -0.025em; }
+        .logo-text p { margin: 0; font-size: 0.65rem; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.2em; }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.5rem;
+            border-radius: 3rem;
+            display: flex;
+            gap: 0.25rem;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0.75rem 1.25rem;
+            border-radius: 2rem;
+            font-weight: 800;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .nav-btn.active { background: #fff; color: #0f172a; }
+
+        /* Layout */
+        main { max-width: 800px; margin: 0 auto; padding: 1.5rem; }
+        .section { display: none; animation: fadeIn 0.4s ease-out; }
+        .section.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Leaderboard Cards */
+        .leaderboard-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .team-card { padding: 1.5rem; border-radius: var(--radius); color: #fff; text-align: center; border-bottom: 6px solid rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .team-card:hover { transform: scale(1.02); }
+        .team-card.green { background: var(--green-team); }
+        .team-card.white { background: #f1f5f9; color: #334155; border-color: #cbd5e1; }
+        .team-card.red { background: var(--red-team); }
+        .team-card.blue { background: var(--blue-team); }
+        .team-card h4 { margin: 0; font-size: 0.7rem; font-weight: 900; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.1em; }
+        .team-card .score { font-size: 3rem; font-weight: 900; font-style: italic; display: block; margin: 0.25rem 0; }
+
+        /* General UI Elements */
+        .card { background: var(--bg-card); border-radius: var(--radius); border: 1px solid #e2e8f0; margin-bottom: 1rem; overflow: hidden; }
+        .card-header { background: #f8fafc; padding: 1rem; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+        .card-header h3 { margin: 0; font-size: 0.8rem; font-weight: 900; text-transform: uppercase; color: #64748b; }
+        .card-body { padding: 1.25rem; }
+
+        .round-nav { display: flex; align-items: center; justify-content: space-between; background: #fff; padding: 0.75rem; border-radius: var(--radius); border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
+        .round-info { text-align: center; }
+        .round-info h2 { margin: 0; font-size: 1rem; font-weight: 900; text-transform: uppercase; }
+        .round-info p { margin: 0; font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+        .btn-round { background: #f1f5f9; border: none; padding: 0.75rem; border-radius: 0.75rem; cursor: pointer; }
+        .btn-round:disabled { opacity: 0.2; cursor: not-allowed; }
+
+        /* Roster Elements */
+        .player-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+        .player-num { font-size: 0.6rem; font-weight: 900; color: #cbd5e1; width: 1.5rem; text-align: right; }
+        .player-input { flex: 1; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 0.75rem; font-weight: 600; font-size: 0.9rem; background: #f8fafc; }
+        .btn-import { background: rgba(0,0,0,0.1); border: none; padding: 0.4rem 0.75rem; border-radius: 0.5rem; font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: inherit; cursor: pointer; }
+
+        /* Setup / Matchup */
+        .btn-add { width: 100%; padding: 1rem; background: #2563eb; color: #fff; border: none; border-radius: 1rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; margin-bottom: 1rem; }
+        .match-setup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .setup-team { display: flex; flex-direction: column; gap: 0.5rem; }
+        .setup-select { padding: 0.75rem; border-radius: 0.75rem; border: 2px solid #f1f5f9; font-weight: 700; font-size: 0.8rem; outline: none; }
+
+        /* Scoring */
+        .score-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .team-label { flex: 1; }
+        .team-label .team-name { font-weight: 900; text-transform: uppercase; display: block; font-size: 1.1rem; }
+        .team-label .players { font-size: 0.75rem; color: #94a3b8; font-weight: 600; }
+        .score-inputs { display: flex; align-items: center; gap: 0.5rem; background: #f1f5f9; padding: 1rem; border-radius: 1rem; }
+        .input-score { width: 3.5rem; height: 3.5rem; text-align: center; border-radius: 0.75rem; border: 2px solid #fff; font-size: 1.5rem; font-weight: 900; outline: none; }
+        .btn-lock { padding: 0.75rem 1.25rem; border-radius: 0.75rem; border: none; font-weight: 900; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; cursor: pointer; background: #0f172a; color: #fff; }
+        .btn-lock.locked { background: #10b981; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 1.5rem; }
+        .modal.active { display: flex; }
+        .modal-content { background: #fff; width: 100%; max-width: 500px; border-radius: 2rem; padding: 2rem; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h2 { margin: 0; font-size: 1.25rem; font-weight: 900; text-transform: uppercase; italic; }
+        textarea { width: 100%; height: 200px; border: 2px solid #f1f5f9; border-radius: 1rem; padding: 1rem; font-family: monospace; outline: none; margin-bottom: 1.5rem; }
+        .btn-primary { width: 100%; padding: 1rem; background: #2563eb; color: #fff; border: none; border-radius: 1rem; font-weight: 800; text-transform: uppercase; }
+
+        @media (max-width: 600px) {
+            .nav-btn span { display: none; }
+            .nav-btn { padding: 1rem; }
+            .leaderboard-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo-container">
+            <div class="logo-box">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
+            </div>
+            <div class="logo-text">
+                <h1>Weekend War</h1>
+                <p>Tournament Scoring Hub</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- NAVIGATION BAR (Round Selector) -->
+        <div id="round-nav-container" style="display: none;">
+            <div class="round-nav">
+                <button class="btn-round" id="prev-round" onclick="changeRound(-1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m15 18-6-6 6-6"/></svg>
+                </button>
+                <div class="round-info">
+                    <h2 id="round-name">Friday R1</h2>
+                    <p id="round-sub">2v2 Scramble / Hi-Lo</p>
+                </div>
+                <button class="btn-round" id="next-round" onclick="changeRound(1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD SECTION -->
+        <div id="leaderboard" class="section active">
+            <div class="leaderboard-grid" id="leaderboard-scores">
+                <!-- Points injected here -->
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>Full Schedule</h3></div>
+                <div id="schedule-list">
+                    <!-- Schedule list injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ROSTER SECTION -->
+        <div id="roster" class="section">
+            <div class="card" style="background: #2563eb; color: #fff; padding: 1.5rem; margin-bottom: 2rem; border: none;">
+                <h2 style="margin: 0; font-weight: 900; text-transform: uppercase; font-style: italic;">Player Roster</h2>
+                <p style="margin: 0.5rem 0 0 0; opacity: 0.8; font-size: 0.8rem; font-weight: 600;">Manage your 48 participants across 4 teams.</p>
+            </div>
+            <div id="roster-teams-grid" class="leaderboard-grid">
+                <!-- Team cards injected here -->
+            </div>
+        </div>
+
+        <!-- SETUP SECTION -->
+        <div id="setup" class="section">
+            <div id="setup-controls">
+                <!-- Dynamic match adding buttons injected here -->
+            </div>
+            <div id="match-list-setup">
+                <!-- Matches for setup injected here -->
+            </div>
+        </div>
+
+        <!-- INPUT SECTION -->
+        <div id="scoring" class="section">
+            <div id="match-list-scoring">
+                <!-- Matches for scoring injected here -->
+            </div>
+        </div>
+    </main>
+
+    <nav>
+        <button class="nav-btn active" onclick="switchTab('leaderboard')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+            <span>Scores</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('roster')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span>Roster</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('setup')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="16" x2="22" y1="11" y2="11"/></svg>
+            <span>Matchup</span>
+        </button>
+        <button class="nav-btn" onclick="switchTab('scoring')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Input</span>
+        </button>
+    </nav>
+
+    <!-- Modal for Bulk Import -->
+    <div id="import-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-team-title">Import Team</h2>
+                <button class="btn-round" onclick="closeModal()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <p style="font-size: 0.8rem; color: #64748b; font-weight: 600; margin-bottom: 1rem;">Paste 12 names, one per line, from your Excel file.</p>
+            <textarea id="import-area" placeholder="Name 1&#10;Name 2&#10;..."></textarea>
+            <button class="btn-primary" onclick="processImport()">Synchronize Roster</button>
+        </div>
+    </div>
+
+    <script>
+        // Data Structures
+        const TEAM_COLORS = [
+            { id: 'green', name: 'Green Team' },
+            { id: 'white', name: 'White Team' },
+            { id: 'red', name: 'Red Team' },
+            { id: 'blue', name: 'Blue Team' }
+        ];
+
+        const ROUNDS = [
+            { id: 1, name: 'Friday R1', sub: '2v2 Scramble / Hi-Lo', formats: ['Scramble', 'HiLo'] },
+            { id: 2, name: 'Saturday R2', sub: '2v2 Hi-Lo / Alt Shot', formats: ['HiLo', 'AltShot'] },
+            { id: 3, name: 'Saturday R3', sub: '4-Man Scramble', formats: ['Scramble'] },
+            { id: 4, name: 'Sunday R4', sub: '1v1 Match Play', formats: ['MatchPlay'] }
+        ];
+
+        let state = {
+            players: [],
+            matches: [],
+            currentRoundIdx: 0,
+            importingTeamId: null
+        };
+
+        // Initialize Data
+        function init() {
+            const saved = localStorage.getItem('weekend_war_data_v2');
+            if (saved) {
+                state = JSON.parse(saved);
+            } else {
+                // Generate initial players
+                TEAM_COLORS.forEach(team => {
+                    for (let i = 1; i <= 12; i++) {
+                        state.players.push({
+                            id: team.id + '-' + i,
+                            name: team.name.split(' ')[0] + ' Player ' + i,
+                            teamId: team.id
+                        });
+                    }
+                });
+                save();
+            }
+            render();
+        }
+
+        function save() {
+            localStorage.setItem('weekend_war_data_v2', JSON.stringify(state));
+        }
+
+        // UI Handlers
+        function switchTab(tabId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.innerText.toLowerCase().includes(tabId === 'scoring' ? 'input' : (tabId === 'setup' ? 'matchup' : (tabId === 'roster' ? 'roster' : 'scores'))));
+            if (btn) btn.classList.add('active');
+
+            // Show round nav for setup and scoring
+            document.getElementById('round-nav-container').style.display = (tabId === 'setup' || tabId === 'scoring') ? 'block' : 'none';
+            render();
+        }
+
+        function changeRound(dir) {
+            state.currentRoundIdx = Math.max(0, Math.min(ROUNDS.length - 1, state.currentRoundIdx + (dir)));
+            render();
+        }
+
+        function openModal(teamId) {
+            state.importingTeamId = teamId;
+            const team = TEAM_COLORS.find(t => t.id === teamId);
+            document.getElementById('modal-team-title').innerText = 'Import ' + team.name;
+            document.getElementById('import-modal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('import-modal').classList.remove('active');
+            document.getElementById('import-area').value = '';
+        }
+
+        function processImport() {
+            const text = document.getElementById('import-area').value;
+            const names = text.split('\n').map(n => n.trim()).filter(n => n !== '');
+            const teamId = state.importingTeamId;
+            
+            let count = 0;
+            state.players.forEach(p => {
+                if (p.teamId === teamId && count < names.length) {
+                    p.name = names[count];
+                    count++;
+                }
+            });
+            
+            save();
+            closeModal();
+            render();
+        }
+
+        function addMatch(format) {
+            const round = ROUNDS[state.currentRoundIdx];
+            const newMatch = {
+                id: Date.now() + Math.random().toString(36).substr(2, 5),
+                roundId: round.id,
+                format: format,
+                teamA: { color: 'green', players: [] },
+                teamB: { color: 'white', players: [] },
+                scoreA: 0,
+                scoreB: 0,
+                completed: false
+            };
+            state.matches.push(newMatch);
+            save();
+            render();
+        }
+
+        function removeMatch(id) {
+            state.matches = state.matches.filter(m => m.id !== id);
+            save();
+            render();
+        }
+
+        function updateMatch(id, field, value) {
+            const match = state.matches.find(m => m.id === id);
+            if (!match) return;
+
+            if (field.includes('.')) {
+                const [team, key] = field.split('.');
+                match[team][key] = value;
+            } else {
+                match[field] = value;
+            }
+            save();
+        }
+
+        function toggleLock(id) {
+            const match = state.matches.find(m => m.id === id);
+            if (!match) return;
+            match.completed = !match.completed;
+            save();
+            render();
+        }
+
+        // Render Functions
+        function render() {
+            renderLeaderboard();
+            renderRoster();
+            renderSetup();
+            renderScoring();
+            
+            // Update Round Nav
+            const round = ROUNDS[state.currentRoundIdx];
+            document.getElementById('round-name').innerText = round.name;
+            document.getElementById('round-sub').innerText = round.sub;
+            document.getElementById('prev-round').disabled = state.currentRoundIdx === 0;
+            document.getElementById('next-round').disabled = state.currentRoundIdx === ROUNDS.length - 1;
+        }
+
+        function renderLeaderboard() {
+            const points = { green: 0, white: 0, red: 0, blue: 0 };
+            state.matches.forEach(m => {
+                if (m.completed) {
+                    if (m.scoreA > m.scoreB) points[m.teamA.color] += 1;
+                    else if (m.scoreB > m.scoreA) points[m.teamB.color] += 1;
+                    else { points[m.teamA.color] += 0.5; points[m.teamB.color] += 0.5; }
+                }
+            });
+
+            const container = document.getElementById('leaderboard-scores');
+            container.innerHTML = TEAM_COLORS.map(team => `
+                <div class="team-card ${team.id}">
+                    <h4>${team.name}</h4>
+                    <span class="score">${points[team.id]}</span>
+                </div>
+            `).join('');
+
+            const scheduleContainer = document.getElementById('schedule-list');
+            scheduleContainer.innerHTML = ROUNDS.map(r => `
+                <div style="padding: 1rem; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 800; font-size: 0.85rem; color: #0f172a;">${r.name}</div>
+                        <div style="font-size: 0.7rem; font-weight: 600; color: #94a3b8;">${r.sub}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderRoster() {
+            const container = document.getElementById('roster-teams-grid');
+            container.innerHTML = TEAM_COLORS.map(team => `
+                <div class="card">
+                    <div class="card-header" style="background: ${team.id === 'white' ? '#f1f5f9' : 'var(--' + team.id + '-team)'}; color: ${team.id === 'white' ? '#334155' : '#fff'}; border: none;">
+                        <h3 style="color: inherit;">${team.name}</h3>
+                        <button class="btn-import" onclick="openModal('${team.id}')">Import</button>
+                    </div>
+                    <div class="card-body">
+                        ${state.players.filter(p => p.teamId === team.id).map((p, i) => `
+                            <div class="player-row">
+                                <span class="player-num">${i + 1}</span>
+                                <input type="text" class="player-input" value="${p.name}" onchange="updatePlayer('${p.id}', this.value)">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updatePlayer(id, name) {
+            const p = state.players.find(p => p.id === id);
+            if (p) p.name = name;
+            save();
+        }
+
+        function renderSetup() {
+            const round = ROUNDS[state.currentRoundIdx];
+            const controls = document.getElementById('setup-controls');
+            controls.innerHTML = round.formats.map(f => `
+                <button class="btn-add" onclick="addMatch('${f}')">+ Add ${f} Match</button>
+            `).join('');
+
+            const currentMatches = state.matches.filter(m => m.roundId === round.id);
+            const list = document.getElementById('match-list-setup');
+            
+            list.innerHTML = currentMatches.map((m, idx) => `
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Match #${idx + 1} • ${m.format}</h3>
+                        <button class="btn-round" onclick="removeMatch('${m.id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="3"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="match-setup-grid">
+                            <div class="setup-team">
+                                <select class="setup-select" onchange="updateMatch('${m.id}', 'teamA.color', this.value); render();" style="background: ${getColor(m.teamA.color)}; color: ${m.teamA.color === 'white' ? '#000' : '#fff'}">
+                                    ${TEAM_COLORS.map(c => `<option value="${c.id}" ${m.teamA.color === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                                </select>
+                                ${Array.from({ length: getPlayerCount(m.format) }).map((_, i) => `
+                                    <select class="setup-select" onchange="updateMatchPlayer('${m.id}', 'teamA', ${i}, this.value)">
+                                        <option value="">Select Player...</option>
+                                        ${state.players.filter(p => p.teamId === m.teamA.color).map(p => `
+                                            <option value="${p.id}" ${m.teamA.players[i] === p.id ? 'selected' : ''}>${p.name}</option>
+                                        `).join('')}
+                                    </select>
+                                `).join('')}
+                            </div>
+                            <div class="setup-team">
+                                <select class="setup-select" onchange="updateMatch('${m.id}', 'teamB.color', this.value); render();" style="background: ${getColor(m.teamB.color)}; color: ${m.teamB.color === 'white' ? '#000' : '#fff'}">
+                                    ${TEAM_COLORS.map(c => `<option value="${c.id}" ${m.teamB.color === c.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+                                </select>
+                                ${Array.from({ length: getPlayerCount(m.format) }).map((_, i) => `
+                                    <select class="setup-select" onchange="updateMatchPlayer('${m.id}', 'teamB', ${i}, this.value)">
+                                        <option value="">Select Player...</option>
+                                        ${state.players.filter(p => p.teamId === m.teamB.color).map(p => `
+                                            <option value="${p.id}" ${m.teamB.players[i] === p.id ? 'selected' : ''}>${p.name}</option>
+                                        `).join('')}
+                                    </select>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateMatchPlayer(id, teamKey, playerIdx, playerId) {
+            const match = state.matches.find(m => m.id === id);
+            if (match) {
+                match[teamKey].players[playerIdx] = playerId;
+                save();
+            }
+        }
+
+        function renderScoring() {
+            const round = ROUNDS[state.currentRoundIdx];
+            const currentMatches = state.matches.filter(m => m.roundId === round.id);
+            const list = document.getElementById('match-list-scoring');
+
+            if (currentMatches.length === 0) {
+                list.innerHTML = `<p style="text-align: center; color: #94a3b8; font-weight: 700; padding: 2rem;">No matches set up for this round.</p>`;
+                return;
+            }
+
+            list.innerHTML = currentMatches.map(m => `
+                <div class="card" style="border-left: 8px solid ${m.completed ? '#10b981' : '#2563eb'}">
+                    <div class="card-body">
+                        <div style="font-size: 0.65rem; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 0.75rem; letter-spacing: 0.1em;">${m.format}</div>
+                        <div class="score-row">
+                            <div class="team-label">
+                                <span class="team-name">${getTeamName(m.teamA.color)}</span>
+                                <span class="players">${getMatchPlayerNames(m.teamA.players)}</span>
+                            </div>
+                            <div class="score-inputs">
+                                <input type="number" class="input-score" value="${m.scoreA}" onchange="updateMatch('${m.id}', 'scoreA', parseFloat(this.value) || 0)">
+                                <span style="font-weight: 900; color: #cbd5e1;">:</span>
+                                <input type="number" class="input-score" value="${m.scoreB}" onchange="updateMatch('${m.id}', 'scoreB', parseFloat(this.value) || 0)">
+                                <button class="btn-lock ${m.completed ? 'locked' : ''}" onclick="toggleLock('${m.id}')">${m.completed ? 'LOCKED' : 'LOCK'}</button>
+                            </div>
+                            <div class="team-label" style="text-align: right;">
+                                <span class="team-name">${getTeamName(m.teamB.color)}</span>
+                                <span class="players">${getMatchPlayerNames(m.teamB.players)}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Helpers
+        function getColor(id) {
+            if (id === 'green') return '#059669';
+            if (id === 'white') return '#fff';
+            if (id === 'red') return '#e11d48';
+            if (id === 'blue') return '#2563eb';
+            return '#f1f5f9';
+        }
+
+        function getTeamName(id) {
+            return TEAM_COLORS.find(c => c.id === id)?.name.split(' ')[0] || 'Unknown';
+        }
+
+        function getPlayerCount(format) {
+            if (format === '4-Man Scramble') return 4;
+            if (format === 'MatchPlay') return 1;
+            return 2;
+        }
+
+        function getMatchPlayerNames(ids) {
+            if (!ids || ids.length === 0) return 'TBD';
+            return ids.map(id => state.players.find(p => p.id === id)?.name.split(' ').pop() || 'TBD').join(' & ');
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
